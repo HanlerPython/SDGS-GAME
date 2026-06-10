@@ -1,0 +1,85 @@
+### `GameMVP.java` 的更動與影響範圍
+
+1. **調整畫面解析度**
+* **更動**：`SCREEN_WIDTH` 由 `1920` 改為 `1280`，`SCREEN_HEIGHT` 由 `1080` 改為 `720`。
+* **需要配合改動的人**：**美術/D (UI設計)**。所有 UI 元件的相對位置、按鈕點擊判定區域、字體大小、升級選單邊框大小都需要依據 $1280 \times 720$ 的解析度重新校對。
+
+
+2. **完全導入 `MapSystem` 地圖系統**
+* **更動**：
+* 新增 `private MapSystem mapSystem;` 並在建構子初始化。
+* 徹底刪除原本用 `g2.drawLine()` 畫格子的 `drawWorldBackground()` 方法。
+* 在 `paintComponent()` 中改呼叫 `mapSystem.drawMap(g2d, camera, SCREEN_WIDTH, SCREEN_HEIGHT);`。
+
+
+* **需要配合改動的人**：**D (地圖開發)**。需確保 `MapSystem` 中的 `drawMap` 方法效能正常，且圖片能鋪滿新解析度。
+
+
+3. **優化玩家出生點**
+* **更動**：在 `resetGame()` 中，將原本固定的 `player.reset(0, 0);` 改為 `player.reset(mapSystem.getMapCenterX(), mapSystem.getMapCenterY());`。
+* **需要配合改動的人**：**A (玩家控制)**。需確認 `Player.java` 的 `reset` 方法能正確接收這兩個 `float` 變數並覆蓋舊座標。
+
+
+4. **變更繪圖層效能與像素處理模式 (RenderingHints)**
+* **更動**：在 `paintComponent()` 開頭，將原本的抗鋸齒 (`ANTIALIAS_ON`) 改為 `ANTIALIAS_OFF`，並加入 `VALUE_INTERPOLATION_NEAREST_NEIGHBOR`（鄰近像素插值）與 `VALUE_RENDER_SPEED`。
+* **需要配合改動的人**：無（此為全域繪圖優化，能確保像素圖不模糊且不卡頓）。
+
+
+5. **全面對接物件自身的 `draw()` 方法（移除幾何除錯圖形）**
+* **更動**：
+* **掉落物**：刪除 `g2d.fillRect` 與 `drawString("T")`，改為 `t.draw(g2d, camera);`。
+* **子彈**：刪除綠色 `g2d.fillOval`，改為 `b.draw(g2d, camera);`。
+* **怪物**：刪除暗紅色圓圈與眼睛的 `g2d.fillOval`，改為 `m.draw(g2d, camera);`。
+* **玩家**：刪除在主程式內寫死的一大串綠色圓圈與眼睛繪製代碼，改為 `player.draw(g2d, camera);`。
+
+
+* **需要配合改動的人**：**A、B、C 所有人**。各自的類別（`Player`、`Projectile`、`Monster`、`Trash`）內部必須實作好對應的 `draw(Graphics2D g, Camera camera)` 方法，否則主程式會報錯。
+
+
+6. **更正升級狀態命名與按鍵邏輯**
+* **更動**：將原本不一致的 `"upgrade"` 狀態統一名稱為 **`"levelup"`**，並同步更正 `update()` 與 `keyPressed()` 裡面的條件判定。
+* **需要配合改動的人**：**C (升級系統)**。如果升級邏輯或 UI 繪製有依賴特定字串，需統一改為 `"levelup"`。
+
+
+8. **調整小遊戲觸發與更新邏輯**
+* **更動**：
+* `update()` 內部的字串判定改為呼交物件方法 `if (trashSortGame.isActive())`。
+* 在 `keyPressed()` 中新增快捷鍵，按下 **`T` 鍵**可直接強制開啟小遊戲狀態 (`gameState = "minigame"; trashSortGame.start();`)。
+
+
+
+
+
+---
+
+### `Projectile.java` 的更動與影響範圍
+
+1. **更動（未包含在原始碼中，但已被 `GameMVP` 接口呼叫）**：
+* 在主程式 `drawWorldObjects` 中，原本畫子彈的地方從：
+```java
+g2.setColor(new Color(50, 200, 50));
+g2.fillOval((int)screenX - 4, (int)screenY - 4, 8, 8);
+
+```
+
+
+被徹底刪除，改為：
+```java
+b.draw(g2d, camera);
+
+```
+
+
+
+
+2. **需要配合改動的人**：**A (負責子彈與武器系統)**。
+* 必須在 `Projectile.java` 內實作 `draw` 方法，否則編譯不會過。
+* **程式碼需要補上類似以下的實作**（負責讀取子彈圖片並根據 Camera 轉換座標繪製）：
+```java
+public void draw(Graphics2D g, ui.Camera camera) {
+    int screenX = (int) camera.worldToScreenX(x);
+    int screenY = (int) camera.worldToScreenY(y);
+    // 在此處加入 ImageIO 讀取 bullet.png 並繪製的邏輯，或暫時先畫幾何圖形防呆
+}
+
+```
