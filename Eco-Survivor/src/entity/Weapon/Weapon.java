@@ -1,7 +1,6 @@
 package entity.Weapon;
 
 import entity.Player;
-import entity.Projectile;
 import entity.Monster;
 import entity.Trash;
 import system.WeaponSystem;
@@ -14,7 +13,6 @@ public abstract class Weapon {
     protected long lastAttacktTime;
     protected int level;
     protected WeaponSystem.WeaponType type;
-    protected boolean isActive; // 用於控制如太陽能量的開關
 
     public Weapon(int damage, long cooldown, WeaponSystem.WeaponType type) {
         this.damage = damage;
@@ -22,7 +20,6 @@ public abstract class Weapon {
         this.lastAttacktTime = 0;
         this.level = 1;
         this.type = type;
-        this.isActive = true;
     }
 
     // 子類別實作各自的攻擊方式

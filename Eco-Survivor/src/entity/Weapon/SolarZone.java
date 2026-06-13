@@ -1,7 +1,6 @@
 package entity.Weapon;
 
 import entity.Player;
-import entity.Projectile;
 import entity.Monster;
 import entity.Trash;
 import system.WeaponSystem;
@@ -19,12 +18,12 @@ public class SolarZone extends Weapon {
 
     private static BufferedImage sunRingImage;
     private float currentAngle = 0;
-    
+
     public SolarZone() {
         // 傷害: 10, 冷卻: 1秒 (500,000,000奈秒)
         super(10, 500_000_000L, WeaponSystem.WeaponType.SOLARZONE);
         this.radius = 300;
-        
+
         if (sunRingImage == null) {
             loadImage();
         }
@@ -39,7 +38,7 @@ public class SolarZone extends Weapon {
                 System.out.println("【SolarZone】sunring.png 載入成功");
                 return;
             }
-            
+
             // 從檔案載入
             File file = new File("res/sunring.png");
             if (file.exists()) {
@@ -47,25 +46,22 @@ public class SolarZone extends Weapon {
                 System.out.println("【SolarZone】從檔案載入 sunring.png 成功");
                 return;
             }
-            
+
             System.err.println("【SolarZone】找不到 sunring.png");
         } catch (IOException e) {
             System.err.println("【SolarZone】載入圖片失敗");
         }
     }
-    
+
     @Override
     public void update(Player player, float targetX, float targetY,
             ProjectileSystem projectileSystem, List<Monster> monsters, List<Trash> trashes) {
-    	
-    	// 每幀都旋轉（與攻擊冷卻分離）
-        currentAngle += 0.05f;  // 調整這個值控制速度
+
+        // 每幀都旋轉（與攻擊冷卻分離）
+        currentAngle += 0.05f; // 調整這個值控制速度
         if (currentAngle >= Math.PI * 2) {
-            currentAngle -= Math.PI * 2;  // 保持角度在 0~2π 之間
+            currentAngle -= Math.PI * 2; // 保持角度在 0~2π 之間
         }
-        
-        if (!isActive)
-            return;
 
         if (canAttack()) {
             float radiusSq = this.radius * this.radius;
@@ -89,33 +85,34 @@ public class SolarZone extends Weapon {
     }
 
     public void draw(Graphics2D g, ui.Camera camera, Player player) {
-        if (sunRingImage == null) return;
-        
+        if (sunRingImage == null)
+            return;
+
         // 計算玩家在螢幕上的位置
         float playerScreenX = camera.worldToScreenX(player.getX());
         float playerScreenY = camera.worldToScreenY(player.getY());
-        
+
         // 計算繪製大小（半徑 * 2）
-        int drawSize = (int)(this.radius * 2);
-        
+        int drawSize = (int) (this.radius * 2);
+
         // 儲存原始變換
         java.awt.geom.AffineTransform oldTransform = g.getTransform();
-        
+
         // 旋轉並繪製
         g.rotate(currentAngle, playerScreenX, playerScreenY);
-        g.drawImage(sunRingImage, 
-                    (int)(playerScreenX - this.radius), 
-                    (int)(playerScreenY - this.radius), 
-                    drawSize, drawSize, null);
-        
+        g.drawImage(sunRingImage,
+                (int) (playerScreenX - this.radius),
+                (int) (playerScreenY - this.radius),
+                drawSize, drawSize, null);
+
         // 還原變換
         g.setTransform(oldTransform);
     }
-    
+
     public float getRadius() {
         return radius;
     }
-    
+
     @Override
     protected void applyLevelUpEffects() {
         switch (this.level) {

@@ -11,19 +11,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class GameAudio {
-    
+
     private static Clip backgroundMusic;
     private static FloatControl volumeControl;
-    
-    // 🔥 修改：改為儲存多個 Clip 實例（支援疊加播放）
     private static List<Clip> activeSounds = new ArrayList<>();
-    
+
     public static void playBackgroundMusic(String filePath, int volumePercent) {
         stopBackgroundMusic();
-        
+
         try {
             javax.sound.sampled.AudioInputStream audioStream = null;
-            
+
             URL url = GameAudio.class.getClassLoader().getResource(filePath);
             if (url != null) {
                 audioStream = javax.sound.sampled.AudioSystem.getAudioInputStream(url);
@@ -35,15 +33,15 @@ public class GameAudio {
                 }
                 audioStream = javax.sound.sampled.AudioSystem.getAudioInputStream(file);
             }
-            
+
             backgroundMusic = javax.sound.sampled.AudioSystem.getClip();
             backgroundMusic.open(audioStream);
-            
+
             updateVolume(volumePercent);
             backgroundMusic.loop(Clip.LOOP_CONTINUOUSLY);
-            
+
             System.out.println("【GameAudio】背景音樂播放中: " + filePath);
-            
+
         } catch (UnsupportedAudioFileException e) {
             System.err.println("【GameAudio】不支援的音訊格式: " + filePath);
         } catch (IOException e) {
@@ -52,21 +50,16 @@ public class GameAudio {
             System.err.println("【GameAudio】音訊線路不可用");
         }
     }
-    
-    /**
-     * 🔥 播放音效（支援重複播放、疊加）
-     * 每次呼叫都會建立新的 Clip 實例，可以同時播放多個
-     */
+
     public static void playSound(String soundFileName) {
         playSound(soundFileName, VolumeManager.getVolume());
     }
-    
+
     public static void playSound(String soundFileName, int volumePercent) {
         try {
-            // 🔥 每次都建立新的 Clip（不共用，才能疊加）
             URL url = GameAudio.class.getClassLoader().getResource(soundFileName);
             javax.sound.sampled.AudioInputStream audioStream = null;
-            
+
             if (url != null) {
                 audioStream = javax.sound.sampled.AudioSystem.getAudioInputStream(url);
             } else {
@@ -77,10 +70,10 @@ public class GameAudio {
                 }
                 audioStream = javax.sound.sampled.AudioSystem.getAudioInputStream(file);
             }
-            
+
             Clip clip = javax.sound.sampled.AudioSystem.getClip();
             clip.open(audioStream);
-            
+
             // 設定音量
             if (clip.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
                 FloatControl gainControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
@@ -93,10 +86,10 @@ public class GameAudio {
                 }
                 gainControl.setValue(dB);
             }
-            
+
             // 添加到活躍列表
             activeSounds.add(clip);
-            
+
             // 播放完成後自動清理
             clip.addLineListener(event -> {
                 if (event.getType() == javax.sound.sampled.LineEvent.Type.STOP) {
@@ -104,17 +97,52 @@ public class GameAudio {
                     activeSounds.remove(clip);
                 }
             });
-            
+
             clip.start();
-            
+
         } catch (Exception e) {
             System.err.println("【GameAudio】播放音效失敗: " + soundFileName);
         }
     }
-    
-    /**
-     * 🔥 停止所有正在播放的音效（可選）
-     */
+
+    public static void playVictorySound() {
+        try {
+            URL url = GameAudio.class.getClassLoader().getResource("victory.wav");
+            if (url == null) {
+                File file = new File("res/victory.wav");
+                if (!file.exists()) {
+                    System.err.println("【GameAudio】找不到勝利音效檔案: victory.wav");
+                    return;
+                }
+                url = file.toURI().toURL();
+            }
+
+            javax.sound.sampled.AudioInputStream audioStream = javax.sound.sampled.AudioSystem.getAudioInputStream(url);
+            Clip victoryClip = javax.sound.sampled.AudioSystem.getClip();
+            victoryClip.open(audioStream);
+
+            // 設定音量
+            int volumePercent = VolumeManager.getVolume();
+            if (victoryClip.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
+                FloatControl gainControl = (FloatControl) victoryClip.getControl(FloatControl.Type.MASTER_GAIN);
+                float dB;
+                if (volumePercent <= 0) {
+                    dB = -80.0f;
+                } else {
+                    dB = -1.0f * (volumePercent / 100.0f);
+                    dB = Math.max(-80.0f, Math.min(0f, dB));
+                }
+                gainControl.setValue(dB);
+            }
+
+            victoryClip.start();
+            System.out.println("【GameAudio】播放勝利音效");
+
+        } catch (Exception e) {
+            System.err.println("【GameAudio】播放勝利音效失敗");
+        }
+    }
+
     public static void stopAllSounds() {
         for (Clip clip : activeSounds) {
             if (clip.isRunning()) {
@@ -124,10 +152,11 @@ public class GameAudio {
         }
         activeSounds.clear();
     }
-    
+
     public static void updateVolume(int volumePercent) {
-        if (backgroundMusic == null) return;
-        
+        if (backgroundMusic == null)
+            return;
+
         float dB;
         if (volumePercent <= 0) {
             dB = -80.0f;
@@ -135,11 +164,11 @@ public class GameAudio {
             dB = -40.0f * (1.0f - volumePercent / 100.0f);
             dB = Math.max(-80.0f, Math.min(0f, dB));
         }
-        
+
         try {
             volumeControl = (FloatControl) backgroundMusic.getControl(FloatControl.Type.MASTER_GAIN);
             volumeControl.setValue(dB);
-            
+
             if (backgroundMusic.isRunning()) {
                 boolean wasPlaying = backgroundMusic.isRunning();
                 long position = backgroundMusic.getMicrosecondPosition();
@@ -149,12 +178,11 @@ public class GameAudio {
                     backgroundMusic.start();
                 }
             }
-            
+
         } catch (IllegalArgumentException e) {
             // 不支援音量控制
         }
-        
-        // 🔥 同時更新所有正在播放的音效音量
+
         for (Clip clip : activeSounds) {
             if (clip.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
                 try {
@@ -166,10 +194,11 @@ public class GameAudio {
             }
         }
     }
-    
+
     public static void updateVolumeImmediate(int volumePercent) {
-        if (backgroundMusic == null) return;
-        
+        if (backgroundMusic == null)
+            return;
+
         float dB;
         if (volumePercent <= 0) {
             dB = -80.0f;
@@ -177,38 +206,39 @@ public class GameAudio {
             dB = -40.0f * (1.0f - volumePercent / 100.0f);
             dB = Math.max(-80.0f, Math.min(0f, dB));
         }
-        
+
         try {
             volumeControl = (FloatControl) backgroundMusic.getControl(FloatControl.Type.MASTER_GAIN);
             volumeControl.setValue(dB);
-            
+
             new Thread(() -> {
                 try {
                     Thread.sleep(1);
-                } catch (InterruptedException e) {}
-                
+                } catch (InterruptedException e) {
+                }
+
                 if (backgroundMusic != null && !backgroundMusic.isRunning()) {
                     backgroundMusic.start();
                 }
             }).start();
-            
+
         } catch (IllegalArgumentException e) {
             // 不支援音量控制
         }
     }
-    
+
     public static void pauseBackgroundMusic() {
         if (backgroundMusic != null && backgroundMusic.isRunning()) {
             backgroundMusic.stop();
         }
     }
-    
+
     public static void resumeBackgroundMusic() {
         if (backgroundMusic != null && !backgroundMusic.isRunning()) {
             backgroundMusic.start();
         }
     }
-    
+
     public static void stopBackgroundMusic() {
         if (backgroundMusic != null) {
             if (backgroundMusic.isRunning()) {

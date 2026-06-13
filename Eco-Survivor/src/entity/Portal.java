@@ -14,12 +14,10 @@ public class Portal {
     private boolean active = true;
     private String gameType;
     
-    // 💡 傳送門圖片（靜態，所有傳送門共用）
     private static BufferedImage trashPortalImage;
     private static BufferedImage powerPortalImage;
     private static BufferedImage faucetPortalImage;
-    
-    // 💡 圖片尺寸
+
     private final int PORTAL_SIZE = 64;
 
     public Portal(float x, float y, String gameType){

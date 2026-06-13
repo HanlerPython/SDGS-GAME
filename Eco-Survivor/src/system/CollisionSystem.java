@@ -21,7 +21,6 @@ public class CollisionSystem {
                     bullet.setDestroyed(true);
                     if (monster.isDead) {
                         trashes.add(new Trash(monster.getX(), monster.getY(), 1));
-                        // 🔥 擊殺音效
                         GameAudio.playSound("kill.wav");
                     }
                     continue outerloop;

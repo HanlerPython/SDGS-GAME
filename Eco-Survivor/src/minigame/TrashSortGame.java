@@ -50,7 +50,7 @@ public class TrashSortGame implements MinigameInterface {
     
     private void checkAnswer(int choice) {
         if (isWin) return;
-        sortedCount++; //每次選擇都算一次進度，不論對錯，五次就結束
+        sortedCount++;
 
         int index = -1;
         for (int i = 0; i < trashItems.length; i++) {
@@ -72,7 +72,6 @@ public class TrashSortGame implements MinigameInterface {
             nextTrash();
         }
         
-        // 檢查是否獲勝
         if (sortedCount >= TARGET_COUNT) {
             isWin = true;
         }
@@ -88,17 +87,14 @@ public class TrashSortGame implements MinigameInterface {
         g.fillRect(0, 0, screenWidth, screenHeight);
         
         if (isWin) {
-            // 結束畫面（成功）
             drawCenteredString(g, "SDG 12: TRASH SORTING", screenWidth, 150, new Font("Arial", Font.BOLD, 36), new Color(100, 200, 100));
             drawCenteredString(g, "FINISHED! ALL ITEMS CLASSIFIED!", screenWidth, 250, new Font("Arial", Font.BOLD, 28), new Color(100, 255, 100));
             drawCenteredString(g, "Reward: +" + rewardAttackBonus + " Attack Power", screenWidth, 350, new Font("Arial", Font.BOLD, 24), Color.WHITE);
             drawCenteredString(g, "Press ESC to Return to Battlefield", screenWidth, screenHeight - 80, new Font("Arial", Font.PLAIN, 18), Color.GRAY);
         } else {
-            // 遊戲進行中
             drawCenteredString(g, "SDG 12: TRASH SORTING", screenWidth, 80, new Font("Arial", Font.BOLD, 36), new Color(100, 200, 100));
             drawCenteredString(g, "Progress: " + sortedCount + " / " + TARGET_COUNT, screenWidth, 150, new Font("Arial", Font.PLAIN, 20), Color.WHITE);
             
-            // 根據上一次答題顯示反饋
             if (sortedCount > 0) {
                 if (lastAnswerCorrect) {
                     drawCenteredString(g, "CORRECT!", screenWidth, 220, new Font("Arial", Font.BOLD, 24), new Color(100, 255, 100));
@@ -125,7 +121,7 @@ public class TrashSortGame implements MinigameInterface {
     @Override
     public void onKeyPress(int key) {
         if (!active || isWin) return;
-        if (key >= 49 && key <= 52) {  // 1-4 鍵
+        if (key >= 49 && key <= 52) {
             checkAnswer(key - 48);
         }
     }

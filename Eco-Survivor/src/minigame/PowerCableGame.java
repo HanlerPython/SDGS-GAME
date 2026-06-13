@@ -13,7 +13,7 @@ public class PowerCableGame implements MinigameInterface {
     private boolean isFailed;
     private int restartsLeft;
     private long startTime;
-    private final int TIME_LIMIT_MS = 15000; // 限10秒
+    private final int TIME_LIMIT_MS = 15000;
 
     // 遊戲節點類別
     private static class Node {

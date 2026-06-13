@@ -81,18 +81,10 @@ public class WeaponSystem {
     }
     
     public void reset() {
-        // 清除所有武器
         weapons.clear();
-        
-        // 重置擁有狀態
         ownedType.put(WeaponType.SEEDGUN, false);
         ownedType.put(WeaponType.SOLARZONE, false);
         ownedType.put(WeaponType.UVLASER, false);
-        
-        // 重新加入初始武器
         addWeapon(WeaponType.SEEDGUN);
-        
-        System.out.println("【WeaponSystem】武器系統已重置");
     }
-    
 }

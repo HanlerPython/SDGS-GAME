@@ -57,7 +57,7 @@ public class WaveData {
             new int[]{0, 1, 2, 3, 4}, 
             new int[]{25, 30, 25, 5, 15}
         ),
-        // 🔥 第 5 波（最終波次，requiredKills = -1）
+        //第 5 波（最終波次）
         new WaveConfig(100, 150, -1,
             new int[]{0, 1, 2, 3, 4}, 
             new int[]{20, 25, 25, 10, 20}

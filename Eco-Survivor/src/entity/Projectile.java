@@ -3,7 +3,6 @@ package entity;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
 
 public class Projectile {
@@ -37,14 +36,13 @@ public class Projectile {
         float dy = targetY - y;
         double len = Math.hypot(dx, dy);
         if (len > 0) {
-        	if(isPlayer) {
-        		this.vx = (float) (dx / len * 12);
+            if (isPlayer) {
+                this.vx = (float) (dx / len * 12);
                 this.vy = (float) (dy / len * 12);
-        	}
-        	else {
-        		this.vx = (float) (dx / len * 3);
+            } else {
+                this.vx = (float) (dx / len * 3);
                 this.vy = (float) (dy / len * 3);
-        	}
+            }
         } else {
             this.vx = 0;
             this.vy = 0;
@@ -60,7 +58,7 @@ public class Projectile {
             }
             url = getClass().getClassLoader().getResource("cigarette.png");
             if (url != null) {
-            	enemyBulletImage = ImageIO.read(url);
+                enemyBulletImage = ImageIO.read(url);
                 System.out.println("【Projectile】載入 cigarette.png 成功");
                 return;
             }
@@ -72,17 +70,16 @@ public class Projectile {
     public void draw(Graphics2D g, ui.Camera camera) {
         int screenX = (int) camera.worldToScreenX(x);
         int screenY = (int) camera.worldToScreenY(y);
-        
-        if(isPlayer) {
-        	if (bulletImage != null) {
+
+        if (isPlayer) {
+            if (bulletImage != null) {
                 g.drawImage(bulletImage, screenX - WIDTH / 2, screenY - HEIGHT / 2, WIDTH, HEIGHT, null);
             } else {
                 g.setColor(Color.CYAN);
                 g.fillOval(screenX - 5, screenY - 5, 10, 10);
             }
-        }
-        else {
-        	if (enemyBulletImage != null) {
+        } else {
+            if (enemyBulletImage != null) {
                 g.drawImage(enemyBulletImage, screenX - WIDTH / 2, screenY - HEIGHT / 2, WIDTH, HEIGHT, null);
             } else {
                 g.setColor(Color.CYAN);

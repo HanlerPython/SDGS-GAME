@@ -27,12 +27,11 @@ public class MapSystem {
 
     // 地圖資料矩陣
     private int[][] mapGrid = new int[WORLD_TILES_X][WORLD_TILES_Y];
-    private int[][] mapVariantGrid = new int[WORLD_TILES_X][WORLD_TILES_Y];          // -1:預設sand_15, 0:草差分, 1:石差分, 2:沙微調
-    private int[][] mapVariantRotationGrid = new int[WORLD_TILES_X][WORLD_TILES_Y];  // 💡 新增：底圖差分專用的隨機旋轉角度 (0~3)
-    private int[][] mapObjectGrid = new int[WORLD_TILES_X][WORLD_TILES_Y];           // 上層樹木/大岩石
-    private int[][] mapRotationGrid = new int[WORLD_TILES_X][WORLD_TILES_Y];         // 上層裝飾物件隨機旋轉角度
+    private int[][] mapVariantGrid = new int[WORLD_TILES_X][WORLD_TILES_Y];
+    private int[][] mapVariantRotationGrid = new int[WORLD_TILES_X][WORLD_TILES_Y];
+    private int[][] mapObjectGrid = new int[WORLD_TILES_X][WORLD_TILES_Y];
+    private int[][] mapRotationGrid = new int[WORLD_TILES_X][WORLD_TILES_Y];
 
-    // 💡 優化：預先計算 tileIndex 緩存（保留原有邏輯，只是預先算好）
     private int[][] cachedTileIndex = new int[WORLD_TILES_X][WORLD_TILES_Y];
     private boolean tileIndexCacheValid = false;
 
@@ -48,12 +47,8 @@ public class MapSystem {
         loadResources();
     }
 
-    /**
-     * 資源載入邏輯：嚴格對齊差分命名，並套用防閃退載入機制
-     */
     private void loadResources() {
         try {
-            // 1. 自動迴圈載入 0 ~ 15 宮格過渡沙灘（其中 15 號為最主要的預設純沙地）
             for (int i = 0; i < 16; i++) {
                 String fileName = "sand_" + i + ".png";
                 java.net.URL urlTile = getClass().getClassLoader().getResource(fileName);
@@ -64,16 +59,13 @@ public class MapSystem {
                 }
             }
 
-            // 2. 載入 15 號中心塊專用的 3 張「小外觀差分變體圖」
             centerSandTiles[0] = tryLoadImage("sand_grass.png", "src/res/sand_grass.png");
             centerSandTiles[1] = tryLoadImage("sand_stone.png", "src/res/sand_stone.png");
             centerSandTiles[2] = tryLoadImage("sand.png", "src/res/sand.png"); // 微調變體
 
-            // 3. 載入海洋背景圖 bg.png
             java.net.URL urlBg = getClass().getClassLoader().getResource("res/bg.png");
             bgTiles[0] = (urlBg != null) ? ImageIO.read(urlBg) : ImageIO.read(new File("src/res/bg.png"));
 
-            // 4. 安全載入全新四大獨立裝飾物圖片（若檔案不存在會印警告，但遊戲不崩潰）
             imgGrass = tryLoadImage("grass.png", "src/res/grass.png");
             imgPalm  = tryLoadImage("palm.png", "src/res/palm.png");
             imgRock  = tryLoadImage("rock.png", "src/res/rock.png");
@@ -85,10 +77,7 @@ public class MapSystem {
             e.printStackTrace();
         }
     }
-
-    /**
-     * 安全載入輔助方法：找不到檔案時返回 null，不拋出中斷崩潰
-     */
+    
     private BufferedImage tryLoadImage(String resPath, String filePath) {
         try {
             java.net.URL url = getClass().getClassLoader().getResource(resPath);
@@ -103,10 +92,7 @@ public class MapSystem {
         }
         return null;
     }
-
-    /**
-     * 💡 優化：更新 tileIndex 緩存（在地圖生成或改變後呼叫）
-     */
+    
     private void updateTileIndexCache() {
         for (int x = 0; x < WORLD_TILES_X; x++) {
             for (int y = 0; y < WORLD_TILES_Y; y++) {
@@ -149,7 +135,6 @@ public class MapSystem {
             // 讓島嶼隨機散佈在 100x100 的地圖各處
             islandX[i] = 15 + random.nextInt(WORLD_TILES_X - 30);
             islandY[i] = 15 + random.nextInt(WORLD_TILES_Y - 30);
-            // 💡 關鍵：半徑縮小到 5 ~ 8 格，這樣島嶼之間就會留下大片海洋
             islandRadius[i] = 5 + random.nextInt(4); 
         }
 
@@ -159,7 +144,6 @@ public class MapSystem {
                 boolean isLand = false;
                 for (int i = 0; i < islandCount; i++) {
                     double dist = Math.hypot(x - islandX[i], y - islandY[i]);
-                    // 💡 關鍵：提高邊緣鋸齒干擾（* 3.5），讓島嶼邊緣自然碎裂、形成漂亮海岸線
                     dist += random.nextDouble() * 3.5 - 1.75; 
                     if (dist < islandRadius[i]) {
                         isLand = true;
@@ -192,7 +176,6 @@ public class MapSystem {
                             else if (randVal < 95)  mapVariantGrid[x][y] = 1; // 10% 帶小碎石 (sand_stone.png)
                             else                    mapVariantGrid[x][y] = 2; // 5% 微調變體 (sand.png)
                             
-                            // 💡【核心修正】：只要抽中這三張裝飾差分底圖，就配發 0~3 獨立的隨機旋轉角度
                             mapVariantRotationGrid[x][y] = random.nextInt(4);
                         }
 
@@ -217,17 +200,12 @@ public class MapSystem {
             }
         }
         
-        // 💡 優化：地圖生成後更新 tileIndex 緩存
         updateTileIndexCache();
     }
 
     public float getMapCenterX() { return (WORLD_TILES_X * TILE_SIZE) / 2.0f; }
     public float getMapCenterY() { return (WORLD_TILES_Y * TILE_SIZE) / 2.0f; }
 
-    /**
-     * 獨立渲染邏輯：海洋墊底 -> 15號主圖或【帶隨機旋轉的差分底圖】 -> 疊加隨機旋轉物件
-     * 💡 優化：使用緩存的 tileIndex，避免重複計算
-     */
     public void drawMap(Graphics2D g, Camera camera, int screenWidth, int screenHeight) {
         int startX = (int) Math.floor(camera.screenToWorldX(0) / TILE_SIZE);
         int endX = (int) Math.floor(camera.screenToWorldX(screenWidth) / TILE_SIZE) + 1;
@@ -241,9 +219,9 @@ public class MapSystem {
 
                 int terrainType = mapGrid[gridX][gridY];
                 int variant = mapVariantGrid[gridX][gridY];
-                int varRotCode = mapVariantRotationGrid[gridX][gridY]; // 💡 底圖差分旋轉代碼
+                int varRotCode = mapVariantRotationGrid[gridX][gridY];
                 int objectType = mapObjectGrid[gridX][gridY];
-                int rotCode = mapRotationGrid[gridX][gridY];           // 上層物件旋轉代碼
+                int rotCode = mapRotationGrid[gridX][gridY];
 
                 float worldX = x * TILE_SIZE;
                 float worldY = y * TILE_SIZE;
@@ -261,7 +239,6 @@ public class MapSystem {
 
                 // 第二層：渲染沙灘底圖
                 if (terrainType == TILE_SAND) {
-                    // 💡 優化：使用預先計算的 tileIndex
                     int tileIndex;
                     if (tileIndexCacheValid) {
                         tileIndex = cachedTileIndex[gridX][gridY];
@@ -284,7 +261,6 @@ public class MapSystem {
                             // 25% 機率：渲染差分小細圖
                             if (centerSandTiles[variant] != null) {
                                 if (varRotCode > 0) {
-                                    // 💡【核心修正】：對底圖差分執行正中央畫布旋轉
                                     double cX = screenX + TILE_SIZE / 2.0;
                                     double cY = screenY + TILE_SIZE / 2.0;
                                     double radians = varRotCode * (Math.PI / 2.0);
